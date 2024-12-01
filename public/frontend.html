@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <title>Test Frontend API</title>
+  <script>
+    // Base URL de l'API
+    const API_URL = 'http://localhost:4000/api/data';
+
+    // Fonction pour afficher tous les établissements
+    async function fetchAll() {
+      try {
+        const response = await fetch(`${API_URL}?page=1`);
+        const data = await response.json();
+        const resultContainer = document.getElementById('results');
+        resultContainer.innerHTML = '<h3>Liste des établissements</h3>';
+        resultContainer.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      } catch (error) {
+        alert('Erreur lors de la récupération des données : ' + error.message);
+      }
+    }
+
+    // Fonction pour ajouter un nouvel établissement
+    async function addData() {
+      const payload = {
+        siren: document.getElementById('siren').value,
+        nic: document.getElementById('nic').value,
+        siret: parseInt(document.getElementById('siret').value, 10), // Convertir SIRET en nombre
+        statutDiffusionEtablissement: document.getElementById('statut').value,
+        etablissementSiege: document.getElementById('siege').checked
+      };
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        alert('Établissement ajouté avec succès : ' + JSON.stringify(data, null, 2));
+        fetchAll(); // Met à jour la liste
+      } catch (error) {
+        alert('Erreur lors de l\'ajout : ' + error.message);
+      }
+    }
+
+    // Fonction pour supprimer un établissement par ID
+    async function deleteData() {
+      const id = document.getElementById('deleteId').value;
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        alert('Établissement supprimé : ' + JSON.stringify(data, null, 2));
+        fetchAll(); // Met à jour la liste
+      } catch (error) {
+        alert('Erreur lors de la suppression : ' + error.message);
+      }
+    }
+
+    // Fonction pour rechercher un établissement par SIRET
+    async function searchBySiret() {
+      const siret = parseInt(document.getElementById('searchSiret').value.trim(), 10); // Convertir SIRET en nombre
+      if (isNaN(siret)) {
+        alert('Veuillez entrer un numéro SIRET valide.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/${siret}`);
+        if (response.ok) {
+          const data = await response.json();
+          displayResult(data, `Résultat pour SIRET : ${siret}`);
+        } else if (response.status === 404) {
+          displayResult(null, `Aucun établissement trouvé pour SIRET : ${siret}`);
+        } else {
+          throw new Error('Erreur lors de la récupération des données');
+        }
+      } catch (error) {
+        alert('Erreur lors de la recherche : ' + error.message);
+      }
+    }
+
+    // Fonction pour afficher les résultats multiples
+    function displayResults(data, title) {
+      const resultContainer = document.getElementById('results');
+      resultContainer.innerHTML = `<h3>${title}</h3>`;
+      if (data.length > 0) {
+        resultContainer.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      } else {
+        resultContainer.innerHTML += `<p>Aucun établissement trouvé.</p>`;
+      }
+    }
+
+    // Fonction pour afficher un résultat unique
+    function displayResult(data, title) {
+      const resultContainer = document.getElementById('results');
+      resultContainer.innerHTML = `<h3>${title}</h3>`;
+      if (data) {
+        resultContainer.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      } else {
+        resultContainer.innerHTML += `<p>Aucun établissement trouvé.</p>`;
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>Test de l'API</h1>
+
+  <!-- Section pour afficher les résultats -->
+  <div id="results"></div>
+
+  <h2>Ajouter un nouvel établissement</h2>
+  <form onsubmit="event.preventDefault(); addData();">
+    <label>SIREN : <input type="text" id="siren" required></label><br>
+    <label>NIC : <input type="text" id="nic" required></label><br>
+    <label>SIRET : <input type="text" id="siret" required></label><br>
+    <label>Statut : <input type="text" id="statut" required></label><br>
+    <label>Siège social : <input type="checkbox" id="siege"></label><br>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <h2>Supprimer un établissement</h2>
+  <form onsubmit="event.preventDefault(); deleteData();">
+    <label>ID de l'établissement : <input type="text" id="deleteId" required></label><br>
+    <button type="submit">Supprimer</button>
+  </form>
+
+  <h2>Afficher tous les établissements</h2>
+  <button onclick="fetchAll()">Charger la liste</button>
+
+  <h2>Rechercher par SIRET</h2>
+  <form onsubmit="event.preventDefault(); searchBySiret();">
+    <label>SIRET : <input type="text" id="searchSiret" required></label><br>
+    <button type="submit">Rechercher</button>
+  </form>
+
+</body>
+</html>
